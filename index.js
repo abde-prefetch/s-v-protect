@@ -60,8 +60,134 @@ if (fs.existsSync(eventsPath)) {
   }
 }
 
-// Événement d'interaction (Boutons, etc. si besoin plus tard)
-// (Slash commands supprimées)
+const { ChannelType, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
+
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isButton()) return;
+
+  const guildId = interaction.guild.id;
+  const config = client.db.getGuildConfig(guildId);
+
+  // --- CRÉATION DE TICKET ---
+  if (interaction.customId === 'create_ticket') {
+    await interaction.deferReply({ ephemeral: true });
+
+    // Vérifier s'il y a déjà un ticket ouvert par ce membre
+    const existingChannel = interaction.guild.channels.cache.find(c => c.name === `ticket-${interaction.user.username.toLowerCase()}`);
+    if (existingChannel) {
+      return interaction.editReply({ content: `❌ Vous avez déjà un ticket ouvert ici : ${existingChannel}` });
+    }
+
+    try {
+      const channel = await interaction.guild.channels.create({
+        name: `ticket-${interaction.user.username}`,
+        type: ChannelType.GuildText,
+        topic: `Ticket de ${interaction.user.id}`,
+        permissionOverwrites: [
+          {
+            id: interaction.guild.roles.everyone.id,
+            deny: [PermissionFlagsBits.ViewChannel],
+          },
+          {
+            id: interaction.user.id,
+            allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
+          },
+        ],
+      });
+
+      const welcomeEmbed = new EmbedBuilder()
+        .setTitle(`🎟️ Ticket ouvert`)
+        .setDescription(`Bonjour ${interaction.user}, posez votre question ici. L'équipe du serveur vous répondra dès que possible.`)
+        .setColor(config.theme || '#5865F2')
+        .setTimestamp();
+
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('close_ticket')
+          .setLabel('Fermer le ticket')
+          .setEmoji('🔒')
+          .setStyle(ButtonStyle.Danger)
+      );
+
+      await channel.send({ content: `${interaction.user} | @here`, embeds: [welcomeEmbed], components: [row] });
+      return interaction.editReply({ content: `✅ Votre ticket a été créé : ${channel}` });
+    } catch (err) {
+      console.error(err);
+      return interaction.editReply({ content: "❌ Impossible de créer le ticket." });
+    }
+  }
+
+  // --- FERMETURE DE TICKET ---
+  if (interaction.customId === 'close_ticket') {
+    await interaction.deferUpdate();
+
+    const channel = interaction.channel;
+    const topic = channel.topic || '';
+    const creatorId = topic.match(/Ticket de (\d+)/)?.[1];
+
+    await channel.send("🔒 Fermeture du ticket en cours, génération du transcript...");
+
+    // Récupérer les messages
+    let messages;
+    try {
+      messages = await channel.messages.fetch({ limit: 100 });
+    } catch (err) {
+      messages = [];
+    }
+
+    // Générer le transcript texte
+    let transcriptText = `TRANSCRIPT DU TICKET : ${channel.name}\n`;
+    transcriptText += `Ouvert par l'utilisateur ID: ${creatorId || 'Inconnu'}\n`;
+    transcriptText += `Généré le ${new Date().toLocaleString('fr-FR')}\n`;
+    transcriptText += `=========================================\n\n`;
+
+    const sortedMessages = Array.from(messages.values()).reverse();
+    for (const msg of sortedMessages) {
+      if (msg.author.bot && msg.embeds.length > 0) {
+        transcriptText += `[${msg.createdAt.toLocaleString('fr-FR')}] [BOT] ${msg.author.tag} : (Embed)\n`;
+      } else {
+        transcriptText += `[${msg.createdAt.toLocaleString('fr-FR')}] ${msg.author.tag} : ${msg.content}\n`;
+      }
+    }
+
+    const buffer = Buffer.from(transcriptText, 'utf-8');
+    const attachment = new AttachmentBuilder(buffer, { name: `transcript-${channel.name}.txt` });
+
+    // Envoyer en DM au créateur
+    if (creatorId) {
+      try {
+        const creator = await client.users.fetch(creatorId);
+        const dmEmbed = new EmbedBuilder()
+          .setTitle("📁 Ticket Fermé")
+          .setDescription(`Votre ticket sur le serveur **${interaction.guild.name}** a été fermé.\nVous trouverez ci-joint le transcript de vos échanges.`)
+          .setColor(config.theme || '#5865F2')
+          .setTimestamp();
+
+        await creator.send({ embeds: [dmEmbed], files: [attachment] });
+      } catch (err) {
+        console.log(`Impossible d'envoyer le DM de transcript à l'utilisateur ${creatorId}`);
+      }
+    }
+
+    // Optionnel : envoyer les logs dans le salon de logs s'il est configuré
+    if (config.logsChannel) {
+      const logsChan = interaction.guild.channels.cache.get(config.logsChannel);
+      if (logsChan) {
+        const logEmbed = new EmbedBuilder()
+          .setTitle(`📁 Transcript - Ticket ${channel.name}`)
+          .setDescription(`Le ticket de <@${creatorId || interaction.user.id}> a été fermé par ${interaction.user}.`)
+          .setColor('#FF0000')
+          .setTimestamp();
+        await logsChan.send({ embeds: [logEmbed], files: [attachment] }).catch(() => {});
+      }
+    }
+
+    // Supprimer le salon après 5 secondes
+    setTimeout(async () => {
+      await channel.delete().catch(() => {});
+    }, 5000);
+  }
+});
 
 client.once('ready', () => {
   console.log(`✅ S-V Protect connecté en tant que ${client.user.tag}`);
