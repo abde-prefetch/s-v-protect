@@ -13,9 +13,10 @@ const client = new Client({
 });
 
 client.commands = new Collection();
-client.config = new Map(); // Simple config en mémoire pour l'exemple. TODO: Utiliser une DB si multi-serveurs persistante.
+client.prefixCommands = new Collection();
+client.db = require('./db.js');
 
-// Chargement des commandes
+// Chargement des commandes Slash
 const commandsPath = path.join(__dirname, 'commands');
 if (fs.existsSync(commandsPath)) {
   const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith('.js'));
@@ -26,6 +27,37 @@ if (fs.existsSync(commandsPath)) {
     }
   }
 }
+
+// Chargement récursif des commandes Préfixées
+const prefixCommandsPath = path.join(__dirname, 'prefix-commands');
+if (!fs.existsSync(prefixCommandsPath)) {
+  fs.mkdirSync(prefixCommandsPath);
+}
+
+function loadPrefixCommands(dir) {
+  const files = fs.readdirSync(dir);
+  for (const file of files) {
+    const filePath = path.join(dir, file);
+    const stat = fs.lstatSync(filePath);
+    if (stat.isDirectory()) {
+      loadPrefixCommands(filePath);
+    } else if (file.endsWith('.js')) {
+      const required = require(filePath);
+      const commands = Array.isArray(required) ? required : [required];
+      for (const command of commands) {
+        if (command.name && command.execute) {
+          client.prefixCommands.set(command.name, command);
+          if (command.aliases && Array.isArray(command.aliases)) {
+            for (const alias of command.aliases) {
+              client.prefixCommands.set(alias, command);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+loadPrefixCommands(prefixCommandsPath);
 
 // Chargement des événements
 const eventsPath = path.join(__dirname, 'events');
