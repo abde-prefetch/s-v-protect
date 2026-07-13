@@ -12,21 +12,8 @@ const client = new Client({
   ],
 });
 
-client.commands = new Collection();
 client.prefixCommands = new Collection();
 client.db = require('./db.js');
-
-// Chargement des commandes Slash
-const commandsPath = path.join(__dirname, 'commands');
-if (fs.existsSync(commandsPath)) {
-  const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith('.js'));
-  for (const file of commandFiles) {
-    const command = require(path.join(commandsPath, file));
-    if (command.data && command.execute) {
-      client.commands.set(command.data.name, command);
-    }
-  }
-}
 
 // Chargement récursif des commandes Préfixées
 const prefixCommandsPath = path.join(__dirname, 'prefix-commands');
@@ -73,25 +60,8 @@ if (fs.existsSync(eventsPath)) {
   }
 }
 
-// Événement d'interaction (Commandes Slash)
-client.on('interactionCreate', async interaction => {
-  if (!interaction.isChatInputCommand()) return;
-
-  const command = client.commands.get(interaction.commandName);
-  if (!command) return;
-
-  try {
-    await command.execute(interaction, client);
-  } catch (error) {
-    console.error(`Erreur commande ${interaction.commandName}:`, error);
-    const msg = { content: '❌ Une erreur est survenue lors de l\'exécution de la commande.', ephemeral: true };
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp(msg);
-    } else {
-      await interaction.reply(msg);
-    }
-  }
-});
+// Événement d'interaction (Boutons, etc. si besoin plus tard)
+// (Slash commands supprimées)
 
 client.once('ready', () => {
   console.log(`✅ S-V Protect connecté en tant que ${client.user.tag}`);
