@@ -29,5 +29,27 @@ module.exports = [
       await channel.send({ embeds: [embed], components: [row] });
       return message.reply(`✅ Le panel de tickets a été envoyé dans ${channel}.`);
     }
+  },
+  {
+    name: 'settranscript',
+    category: 'config',
+    description: "Configure le salon où seront envoyés les transcripts des tickets.",
+    async execute(message, args, client) {
+      if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+        return message.reply("❌ Vous devez être administrateur pour configurer les transcripts.");
+      }
+
+      const channel = message.mentions.channels.first();
+      if (!channel) {
+        if (args[0] === 'off') {
+          client.db.updateGuildConfig(message.guild.id, { transcriptChannel: null });
+          return message.reply("✅ L'envoi des transcripts dans un salon est désactivé.");
+        }
+        return message.reply("❌ Usage : `+settranscript #salon` ou `+settranscript off`");
+      }
+
+      client.db.updateGuildConfig(message.guild.id, { transcriptChannel: channel.id });
+      return message.reply(`✅ Les transcripts des tickets seront maintenant envoyés dans ${channel}.`);
+    }
   }
 ];

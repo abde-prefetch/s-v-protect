@@ -170,8 +170,9 @@ client.on('interactionCreate', async interaction => {
     }
 
     // Optionnel : envoyer les logs dans le salon de logs s'il est configuré
-    if (config.logsChannel) {
-      const logsChan = interaction.guild.channels.cache.get(config.logsChannel);
+    const targetChannelId = config.transcriptChannel || config.logsChannel;
+    if (targetChannelId) {
+      const logsChan = interaction.guild.channels.cache.get(targetChannelId);
       if (logsChan) {
         const logEmbed = new EmbedBuilder()
           .setTitle(`📁 Transcript - Ticket ${channel.name}`)
