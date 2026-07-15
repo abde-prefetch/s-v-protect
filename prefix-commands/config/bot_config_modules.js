@@ -213,12 +213,35 @@ module.exports = [
       return message.reply("✅ Système anti-leak configuré.");
     }
   },
+  },
   {
-    name: 'confdigi',
+    name: 'antilink',
     category: 'config',
-    description: "Configure les paramètres de digitalisation.",
+    description: "Active ou désactive l'anti-lien.",
     async execute(message, args, client) {
-      return message.reply("✅ Configuration digitalisation mise à jour.");
+      if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
+        return message.reply("❌ Permission requise.");
+      }
+      const opt = args[0]?.toLowerCase();
+      if (opt !== 'on' && opt !== 'off') return message.reply("❌ Usage: `+antilink on` ou `+antilink off`");
+
+      client.db.updateGuildConfig(message.guild.id, { antiLink: opt === 'on' });
+      return message.reply(`✅ L'anti-lien est maintenant **${opt === 'on' ? 'Activé' : 'Désactivé'}**.`);
+    }
+  },
+  {
+    name: 'antiinvite',
+    category: 'config',
+    description: "Active ou désactive l'anti-invitation Discord (discord.gg/).",
+    async execute(message, args, client) {
+      if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
+        return message.reply("❌ Permission requise.");
+      }
+      const opt = args[0]?.toLowerCase();
+      if (opt !== 'on' && opt !== 'off') return message.reply("❌ Usage: `+antiinvite on` ou `+antiinvite off`");
+
+      client.db.updateGuildConfig(message.guild.id, { antiInvite: opt === 'on' });
+      return message.reply(`✅ L'anti-invitation est maintenant **${opt === 'on' ? 'Activé' : 'Désactivé'}**.`);
     }
   }
 ];
