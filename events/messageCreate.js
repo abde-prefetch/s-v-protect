@@ -141,13 +141,17 @@ module.exports = {
         if (userData.msgCount >= SPAM_LIMIT) {
           try {
             await message.delete();
-            await message.member.timeout(TIMEOUT_DURATION, 'Anti-Spam: Trop de messages rapides');
-            await message.channel.send(`🚨 ${message.author} a été rendu muet pour spam.`);
+            if (message.member.bannable) {
+              await message.member.ban({ reason: 'Anti-Spam: Trop de messages rapides' });
+              await message.channel.send(`🚨 **${message.author.tag}** a été banni pour spam massif.`);
+            } else {
+              await message.channel.send(`🚨 Impossible de bannir ${message.author} (hiérarchie trop élevée).`);
+            }
             clearTimeout(userData.timer);
             spamMap.delete(userId);
             return;
           } catch (err) {
-            console.error("Impossible d'appliquer le timeout pour spam :", err);
+            console.error("Impossible de bannir pour spam :", err);
           }
         } else {
           spamMap.set(userId, userData);
