@@ -1,17 +1,14 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
-// ──────────────────────────────────────────────
-//  Définition statique des catégories & commandes
-// ──────────────────────────────────────────────
+// Définition statique des catégories & commandes avec la page de destination
 const PAGES = [
   {
     id: 'overview',
-    emoji: '🏠',
-    label: 'Accueil',
+    emoji: '📚',
+    label: 'Sommaire',
     color: '#5865F2',
-    title: '📖 Aide — Vue d\'ensemble',
-    description: null, // généré dynamiquement
-    fields: null,
+    title: '📖 Sommaire — Aide complète',
+    description: null,
   },
   {
     id: 'moderation',
@@ -128,15 +125,20 @@ function buildEmbed(page, prefix, pageIndex, totalPages, botUser, config) {
     .setFooter({ text: `Gestion Bot • Page ${pageIndex + 1}/${totalPages} • Préfixe : ${prefix}`, iconURL: botUser.displayAvatarURL() });
 
   if (page.id === 'overview') {
+    // Construction dynamique du sommaire avec les numéros de page (1-based index)
+    const tableOfContents = PAGES.map((p, idx) => {
+      if (p.id === 'overview') return null;
+      return `Page **${idx + 1}** : ${p.emoji} **${p.label}**`;
+    }).filter(Boolean).join('\n');
+
     embed
-      .setTitle('📖 Gestion — Aide complète')
+      .setTitle('📖 Sommaire — Menu d\'aide')
       .setThumbnail(botUser.displayAvatarURL())
       .setDescription(
-        `Bienvenue sur l'aide du bot **Gestion** !\n` +
+        `Bienvenue dans le menu d'aide du bot **Gestion**.\n` +
         `Préfixe sur ce serveur : \`${prefix}\`\n\n` +
-        `Utilisez les boutons ci-dessous pour naviguer entre les catégories.\n\n` +
-        `**Catégories disponibles :**\n` +
-        PAGES.filter(p => p.id !== 'overview').map(p => `${p.emoji} **${p.label}**`).join('\n')
+        `Utilisez les boutons directionnels pour faire défiler les pages.\n\n` +
+        `**Sommaire :**\n${tableOfContents}`
       );
   } else {
     embed.setTitle(page.title);
@@ -157,17 +159,15 @@ function buildRow(currentIndex, totalPages) {
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('help_prev')
+      .setLabel('Précédent')
       .setEmoji('⬅️')
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(prevDisabled),
     new ButtonBuilder()
-      .setCustomId('help_home')
-      .setEmoji('🏠')
-      .setStyle(ButtonStyle.Primary),
-    new ButtonBuilder()
       .setCustomId('help_next')
+      .setLabel('Suivant')
       .setEmoji('➡️')
-      .setStyle(ButtonStyle.Secondary)
+      .setStyle(ButtonStyle.Primary)
       .setDisabled(nextDisabled),
   );
 }
@@ -182,11 +182,16 @@ module.exports = {
     const totalPages = PAGES.length;
     let currentIndex = 0;
 
-    // Si un argument est donné, chercher la catégorie
     if (args[0]) {
       const query = args[0].toLowerCase();
-      const found = PAGES.findIndex(p => p.id === query || p.label.toLowerCase() === query);
-      if (found !== -1) currentIndex = found;
+      // Permettre d'aller à une page par son index (1-based) ou par son nom
+      const pageIndex = parseInt(query);
+      if (!isNaN(pageIndex) && pageIndex >= 1 && pageIndex <= totalPages) {
+        currentIndex = pageIndex - 1;
+      } else {
+        const found = PAGES.findIndex(p => p.id === query || p.label.toLowerCase() === query);
+        if (found !== -1) currentIndex = found;
+      }
     }
 
     const embed = buildEmbed(PAGES[currentIndex], prefix, currentIndex, totalPages, client.user, config);
@@ -194,7 +199,6 @@ module.exports = {
 
     const msg = await message.reply({ embeds: [embed], components: [row] });
 
-    // Collecteur de boutons (5 min)
     const collector = msg.createMessageComponentCollector({
       filter: i => i.user.id === message.author.id,
       time: 5 * 60 * 1000,
@@ -203,7 +207,6 @@ module.exports = {
     collector.on('collect', async i => {
       if (i.customId === 'help_prev') currentIndex = Math.max(0, currentIndex - 1);
       else if (i.customId === 'help_next') currentIndex = Math.min(totalPages - 1, currentIndex + 1);
-      else if (i.customId === 'help_home') currentIndex = 0;
 
       const newEmbed = buildEmbed(PAGES[currentIndex], prefix, currentIndex, totalPages, client.user, config);
       const newRow = buildRow(currentIndex, totalPages);
@@ -211,11 +214,9 @@ module.exports = {
     });
 
     collector.on('end', async () => {
-      // Désactiver les boutons après expiration
       const disabledRow = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId('help_prev').setEmoji('⬅️').setStyle(ButtonStyle.Secondary).setDisabled(true),
-        new ButtonBuilder().setCustomId('help_home').setEmoji('🏠').setStyle(ButtonStyle.Primary).setDisabled(true),
-        new ButtonBuilder().setCustomId('help_next').setEmoji('➡️').setStyle(ButtonStyle.Secondary).setDisabled(true),
+        new ButtonBuilder().setCustomId('help_prev').setLabel('Précédent').setEmoji('⬅️').setStyle(ButtonStyle.Secondary).setDisabled(true),
+        new ButtonBuilder().setCustomId('help_next').setLabel('Suivant').setEmoji('➡️').setStyle(ButtonStyle.Primary).setDisabled(true),
       );
       await msg.edit({ components: [disabledRow] }).catch(() => {});
     });
