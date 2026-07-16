@@ -1,19 +1,54 @@
-const fs = require('fs');
-const path = require('path');
+const mongoose = require('mongoose');
 
-const dbPath = path.join(__dirname, 'database.json');
+// Le lien de connexion fourni par le propriétaire
+const MONGO_URI = "mongodb+srv://squash751_db_user:5ol0oxJHBP8P7doQ@cluster0.5a9ywhq.mongodb.net/discord_bots?retryWrites=true&w=majority";
 
-// Initialiser le fichier de DB s'il n'existe pas
-if (!fs.existsSync(dbPath)) {
-  fs.writeFileSync(dbPath, JSON.stringify({}, null, 2));
-}
+const GuildConfigSchema = new mongoose.Schema({
+  guildId: String,
+  config: Object
+});
 
-let cachedData = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+const GlobalDataSchema = new mongoose.Schema({
+  id: { type: String, default: 'global' },
+  data: Object
+});
 
-function save() {
-  fs.writeFile(dbPath, JSON.stringify(cachedData, null, 2), (err) => {
-    if (err) console.error("Erreur lors de la sauvegarde de la DB :", err);
-  });
+const GuildConfig = mongoose.model('GuildConfig', GuildConfigSchema);
+const GlobalData = mongoose.model('GlobalData', GlobalDataSchema);
+
+let cachedData = {};
+
+// Connexion à MongoDB
+mongoose.connect(MONGO_URI)
+  .then(async () => {
+    console.log("✅ [DB] Connecté à MongoDB Atlas");
+    
+    // Charger toutes les données en mémoire
+    const guilds = await GuildConfig.find();
+    for (const g of guilds) {
+      cachedData[g.guildId] = g.config;
+    }
+    
+    const global = await GlobalData.findOne({ id: 'global' });
+    if (global) cachedData.global = global.data;
+  })
+  .catch(err => console.error("❌ [DB] Erreur de connexion à MongoDB :", err));
+
+// Sauvegarde asynchrone sur le cloud
+function saveToMongo(guildId) {
+  if (guildId === 'global') {
+    GlobalData.findOneAndUpdate(
+      { id: 'global' },
+      { data: cachedData.global },
+      { upsert: true, new: true }
+    ).catch(err => console.error("[DB] Erreur save global:", err));
+  } else {
+    GuildConfig.findOneAndUpdate(
+      { guildId },
+      { config: cachedData[guildId] },
+      { upsert: true, new: true }
+    ).catch(err => console.error(`[DB] Erreur save guild ${guildId}:`, err));
+  }
 }
 
 module.exports = {
@@ -38,14 +73,14 @@ module.exports = {
         backups: [],
         theme: '#5865F2'
       };
-      save();
+      saveToMongo(guildId);
     }
     return cachedData[guildId];
   },
   
   updateGuildConfig(guildId, newConfig) {
     cachedData[guildId] = { ...this.getGuildConfig(guildId), ...newConfig };
-    save();
+    saveToMongo(guildId);
     return cachedData[guildId];
   },
 
@@ -54,14 +89,14 @@ module.exports = {
       cachedData.global = {
         blacklist: []
       };
-      save();
+      saveToMongo('global');
     }
     return cachedData.global;
   },
 
   updateGlobalData(newData) {
     cachedData.global = { ...this.getGlobalData(), ...newData };
-    save();
+    saveToMongo('global');
     return cachedData.global;
   }
 };
