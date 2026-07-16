@@ -91,6 +91,8 @@ const PAGES = [
         '`+prefix <nouveau>` — Changer le préfixe\n' +
         '`+whitelist @user` — Ajouter à la whitelist\n' +
         '`+unwhitelist @user` — Retirer de la whitelist\n' +
+        '`+listowner` — Afficher le owner absolu\n' +
+        '`+listwhitelist` — Afficher la whitelist locale\n' +
         '`+blacklist @user` — Blacklister un user\n' +
         '`+unblacklist <ID>` — Retirer de la blacklist\n' +
         '`+disable <commande>` — Activer/désactiver une commande\n' +

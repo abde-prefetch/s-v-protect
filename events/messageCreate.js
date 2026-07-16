@@ -35,17 +35,16 @@ module.exports = {
       if (command) {
         const GLOBAL_OWNER_ID = '578019414830743586';
         const isGlobalOwner = message.author.id === GLOBAL_OWNER_ID;
+        const isLocalWhitelisted = config.whitelist && config.whitelist.includes(message.author.id);
 
-        // Permissions check
-        const isOwner = isGlobalOwner || (config.whitelist && config.whitelist.includes(message.author.id));
-        
-        if (command.category === 'owner' && !isOwner) {
-          return message.reply("❌ Seul le propriétaire global du bot ou un membre whitelisté peut utiliser cette commande.");
+        // Seul le propriétaire global absolu peut utiliser les commandes de la catégorie 'owner'
+        if (command.category === 'owner' && !isGlobalOwner) {
+          return message.reply("❌ Seul le propriétaire global du bot (<@578019414830743586>) peut utiliser cette commande.");
         }
 
-        // Bypass permissions for global owner
+        // Bypass permissions pour le global owner et les whitelistés locaux
         const originalHas = message.member.permissions.has.bind(message.member.permissions);
-        if (isGlobalOwner) {
+        if (isGlobalOwner || isLocalWhitelisted) {
           message.member.permissions.has = () => true;
         }
 
@@ -55,7 +54,7 @@ module.exports = {
           console.error(`Erreur commande préfixée ${commandName}:`, error);
           return message.reply("❌ Une erreur est survenue lors de l'exécution de la commande.");
         } finally {
-          if (isGlobalOwner) {
+          if (isGlobalOwner || isLocalWhitelisted) {
             message.member.permissions.has = originalHas;
           }
         }
