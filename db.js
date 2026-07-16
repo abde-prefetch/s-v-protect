@@ -72,7 +72,8 @@ module.exports = {
         mutedRole: null,
         backups: [],
         theme: '#5865F2',
-        helpImage: null
+        helpImage: null,
+        ticketImage: null
       };
       saveToMongo(guildId);
     }

@@ -12,11 +12,17 @@ module.exports = [
 
       const channel = message.mentions.channels.first() || message.channel;
 
+      const config = client.db.getGuildConfig(message.guild.id);
+      
       const embed = new EmbedBuilder()
         .setTitle('🎟️ Ouvrir un ticket')
         .setDescription('Sélectionnez une catégorie ci-dessous pour ouvrir un ticket et contacter l\'équipe du serveur.')
-        .setColor(client.db.getGuildConfig(message.guild.id).theme || '#5865F2')
+        .setColor(config.theme || '#5865F2')
         .setFooter({ text: 'S-V Protect • Système de tickets' });
+
+      if (config.ticketImage) {
+        embed.setImage(config.ticketImage);
+      }
 
       const row = new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
