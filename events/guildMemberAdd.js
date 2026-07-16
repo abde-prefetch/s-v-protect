@@ -45,8 +45,18 @@ module.exports = {
       try {
         await member.kick('Anti-Raid: Mode protection activé (kick automatique)');
         console.log(`🛡️ ${member.user.tag} expulsé (Anti-Raid)`);
+        return; // On arrête là si le membre est expulsé
       } catch (err) {
         console.error("Impossible d'expulser le membre pendant le raid :", err);
+      }
+    }
+
+    // --- AUTOROLE ---
+    const config = client.db.getGuildConfig(member.guild.id);
+    if (config && config.autorole) {
+      const role = member.guild.roles.cache.get(config.autorole);
+      if (role) {
+        member.roles.add(role).catch(err => console.error(`Impossible d'ajouter l'autorole à ${member.user.tag}:`, err));
       }
     }
   },
