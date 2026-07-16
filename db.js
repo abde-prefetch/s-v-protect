@@ -71,7 +71,8 @@ module.exports = {
         badwords: [],
         mutedRole: null,
         backups: [],
-        theme: '#5865F2'
+        theme: '#5865F2',
+        helpImage: null
       };
       saveToMongo(guildId);
     }
