@@ -1,6 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
-// Définition statique des catégories & commandes avec la page de destination
+// Définition statique des catégories & commandes (chaque commande est dans UNE SEULE catégorie)
 const PAGES = [
   {
     id: 'overview',
@@ -34,8 +34,7 @@ const PAGES = [
     fields: [
       { name: '🎭 Rôles auto', value: '`+autorole @role/off` — Rôle auto aux nouveaux membres\n`+namerole` — Rôle selon le pseudo', inline: false },
       { name: '📋 Logs & Tickets', value: '`+logs #salon/off` — Configurer les logs\n`+ticketsetup [#salon]` — Envoyer le panel tickets\n`+settranscript #salon/off` — Salon des transcripts', inline: false },
-      { name: '🛡️ Anti & Protections', value: '`+antilink on/off` — Anti-lien\n`+antiinvite on/off` — Anti-invitation\n`+ghostping on/off` — Alertes ghostping\n`+antileak` — Anti-leak\n`+badwords add/remove <mot>` — Mots interdits', inline: false },
-      { name: '🖼️ Autres', value: '`+pfp` — Salons images de profil\n`+antilink on/off` — Anti-lien', inline: false },
+      { name: '🖼️ Divers', value: '`+pfp` — Salons images de profil', inline: false },
     ]
   },
   {
@@ -45,7 +44,7 @@ const PAGES = [
     color: '#57F287',
     title: '🛡️ Protection',
     fields: [
-      { name: '🚫 Anti-systèmes', value: '`+antilink on/off` — Anti-lien\n`+antiinvite on/off` — Anti-invitation\n`+antispam on/off` — Anti-spam', inline: false },
+      { name: '🚫 Anti-systèmes', value: '`+antilink on/off` — Anti-lien\n`+antiinvite on/off` — Anti-invitation\n`+antispam on/off` — Anti-spam\n`+ghostping on/off` — Alertes ghostping\n`+antileak` — Anti-leak', inline: false },
       { name: '📝 Mots interdits', value: '`+badwords add <mot>` — Interdire un mot\n`+badwords remove <mot>` — Autoriser un mot\n`+badwords` — Voir la liste', inline: false },
     ]
   },
@@ -125,7 +124,6 @@ function buildEmbed(page, prefix, pageIndex, totalPages, botUser, config) {
     .setFooter({ text: `Gestion Bot • Page ${pageIndex + 1}/${totalPages} • Préfixe : ${prefix}`, iconURL: botUser.displayAvatarURL() });
 
   if (page.id === 'overview') {
-    // Construction dynamique du sommaire avec les numéros de page (1-based index)
     const tableOfContents = PAGES.map((p, idx) => {
       if (p.id === 'overview') return null;
       return `Page **${idx + 1}** : ${p.emoji} **${p.label}**`;
@@ -184,7 +182,6 @@ module.exports = {
 
     if (args[0]) {
       const query = args[0].toLowerCase();
-      // Permettre d'aller à une page par son index (1-based) ou par son nom
       const pageIndex = parseInt(query);
       if (!isNaN(pageIndex) && pageIndex >= 1 && pageIndex <= totalPages) {
         currentIndex = pageIndex - 1;
