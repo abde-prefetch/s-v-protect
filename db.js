@@ -73,7 +73,15 @@ module.exports = {
         backups: [],
         theme: '#5865F2',
         helpImage: null,
-        ticketImage: null
+        ticketImage: null,
+        palmares: {
+          channelId: null,
+          messageId: null,
+          wins: 0,
+          losses: 0,
+          winstreak: 0,
+          history: []
+        }
       };
       saveToMongo(guildId);
     }
