@@ -1,4 +1,5 @@
 // Stockage simple des arrivées récentes en mémoire
+const { EmbedBuilder } = require('discord.js');
 const joinHistory = [];
 const RAID_JOIN_LIMIT = 10; // Nombre de membres
 const RAID_TIME_WINDOW = 10000; // Fenêtre de temps en ms (10 secondes)
@@ -71,6 +72,32 @@ module.exports = {
           }
         })
         .catch(err => console.error(`Erreur lors du fetch du rôle d'autorole:`, err));
+    }
+
+    // --- MESSAGE D'ARRIVÉE ---
+    if (config && config.welcomeChannel) {
+      const welcomeChan = member.guild.channels.cache.get(config.welcomeChannel);
+      if (welcomeChan) {
+        let msg = config.welcomeMessage || "Bienvenue {member} sur le serveur **{guild}** !";
+        msg = msg
+          .replace(/{member}/g, `${member}`)
+          .replace(/{guild}/g, member.guild.name)
+          .replace(/{membercount}/g, member.guild.memberCount);
+
+        const embed = new EmbedBuilder()
+          .setTitle(`👋 Un nouveau membre est arrivé !`)
+          .setDescription(msg)
+          .setColor(config.theme || '#5865F2')
+          .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+          .setTimestamp();
+
+        if (config.welcomeImage) {
+          embed.setImage(config.welcomeImage);
+        }
+
+        welcomeChan.send({ content: `${member}`, embeds: [embed] })
+          .catch(err => console.error("Erreur d'envoi du message de bienvenue :", err));
+      }
     }
   },
 };

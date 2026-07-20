@@ -81,7 +81,10 @@ module.exports = {
           losses: 0,
           winstreak: 0,
           history: []
-        }
+        },
+        welcomeChannel: null,
+        welcomeMessage: "Bienvenue {member} sur le serveur **{guild}** !",
+        welcomeImage: null
       };
       saveToMongo(guildId);
     }
