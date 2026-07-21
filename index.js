@@ -265,4 +265,8 @@ http.createServer((req, res) => {
   console.log(`📡 Serveur web démarré sur le port ${process.env.PORT || 3000}`);
 });
 
+// Écouteurs de debug pour comprendre le blocage Discord
+client.on('debug', m => console.log(`[Discord Debug] ${m}`));
+client.on('error', e => console.error(`[Discord Error]`, e));
+
 client.login(process.env.TOKEN);
