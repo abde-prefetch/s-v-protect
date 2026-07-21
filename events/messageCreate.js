@@ -64,10 +64,9 @@ module.exports = {
       }
     }
 
-    // --- BYPASS SECURITY CHECKS FOR WHITELISTED / ADMINS / OWNER ---
+    // --- BYPASS SECURITY CHECKS FOR WHITELISTED / OWNER ---
     const isWhitelisted = isOwner(message.author.id) || 
-                          (config.whitelist && config.whitelist.includes(message.author.id)) ||
-                          (message.member && message.member.permissions.has(PermissionFlagsBits.Administrator));
+                          (config.whitelist && config.whitelist.includes(message.author.id));
 
     if (isWhitelisted) return;
 
