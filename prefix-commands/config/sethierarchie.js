@@ -52,32 +52,32 @@ module.exports = {
           inline: false
         },
         {
-          name: '⭐ ── RANGS D\'ÉLITE (ACTIVITÉ)',
+          name: '🔥 ── RANGS COMPÉTITIFS (ÉLITE)',
           value: 
-            `> **Rang X** ━ \`Légende Communautaire\`\n` +
-            `> ┗ *Le sommet de l'activité. Prestige et avantages exclusifs.*\n\n` +
-            `> **Rang S** ━ \`Membre d'Élite\`\n` +
-            `> ┗ *Niveau d'activité exceptionnel et présence quotidienne.*\n\n` +
-            `> **Rang A** ━ \`Membre Très Actif\`\n` +
-            `> ┗ *Participe activement aux discussions du serveur.*`,
+            `> **Rang X** ━ \`Élite Suprême\`\n` +
+            `> ┗ *Réservé aux joueurs de niveau professionnel ou semi-professionnel.*\n\n` +
+            `> **Rang S** ━ \`Niveau Excellent\`\n` +
+            `> ┗ *Joueurs de très haut niveau, maîtres de leur sujet.*\n\n` +
+            `> **Rang A** ━ \`Niveau Supérieur\`\n` +
+            `> ┗ *Joueurs confirmés possédant un excellent niveau de jeu.*`,
           inline: false
         },
         {
-          name: '📊 ── RANGS DE PROGRESSION',
+          name: '📊 ── RANGS COMPÉTITIFS (MÉDIAN)',
           value: 
-            `> **Rang B** ━ \`Membre Habitué\`\n` +
-            `> ┗ *Bien intégré dans la communauté.*\n\n` +
-            `> **Rang C** ━ \`Membre Actif\`\n` +
-            `> ┗ *Commence à se faire une place parmi nous.*`,
+            `> **Rang B** ━ \`Niveau Intermédiaire\`\n` +
+            `> ┗ *Joueurs réguliers avec un bon niveau de jeu.*\n\n` +
+            `> **Rang C** ━ \`Niveau Moyen\`\n` +
+            `> ┗ *Joueurs en cours de progression et d'apprentissage.*`,
           inline: false
         },
         {
-          name: '👥 ── NOUVEAUX ARRIVANTS',
+          name: '👥 ── ARRIVANTS & DÉBUTANTS',
           value: 
-            `> **Novice** ━ \`Nouveau venu\`\n` +
-            `> ┗ *Nouveau membre en cours d'intégration.*\n\n` +
-            `> **Visiteur** ━ \`Rôle d'attente\`\n` +
-            `> ┗ *Rôle de base attribué à l'arrivée sur le serveur.*`,
+            `> **Novice** ━ \`Niveau Débutant\`\n` +
+            `> ┗ *Joueurs novices ou nouveaux arrivants sur le jeu.*\n\n` +
+            `> **Visiteur** ━ \`En attente\`\n` +
+            `> ┗ *Rôle d'attente à l'arrivée sur le serveur.*`,
           inline: false
         }
       )
