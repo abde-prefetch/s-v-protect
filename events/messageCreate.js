@@ -62,6 +62,7 @@ async function handleLinkSpam(message, config) {
 
 module.exports = {
   name: 'messageCreate',
+  handleLinkSpam,
   async execute(message, client) {
     if (message.author.bot || !message.guild) return;
 
