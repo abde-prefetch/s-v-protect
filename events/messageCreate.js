@@ -1,4 +1,4 @@
-const { PermissionFlagsBits } = require('discord.js');
+const { PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const { isOwner, OWNER_IDS } = require('../config');
 
 const spamMap = new Map();
@@ -7,6 +7,58 @@ const SPAM_TIME = 5000;
 const TIMEOUT_DURATION = 60 * 1000; 
 
 const MASS_PING_LIMIT = 5; 
+
+const linkSpamMap = new Map();
+const LINK_SPAM_LIMIT = 3;
+const LINK_SPAM_WINDOW = 5 * 60 * 1000; // 5 minutes
+const LINK_TIMEOUT_DURATION = 24 * 60 * 60 * 1000; // 24 heures
+
+// Fonction d'aide pour gérer le spam de liens
+async function handleLinkSpam(message, config) {
+  const userId = message.author.id;
+  const now = Date.now();
+  
+  if (!linkSpamMap.has(userId)) {
+    linkSpamMap.set(userId, []);
+  }
+  
+  const timestamps = linkSpamMap.get(userId);
+  const activeTimestamps = timestamps.filter(t => now - t < LINK_SPAM_WINDOW);
+  activeTimestamps.push(now);
+  linkSpamMap.set(userId, activeTimestamps);
+  
+  if (activeTimestamps.length >= LINK_SPAM_LIMIT) {
+    linkSpamMap.delete(userId); // Reset
+    try {
+      if (message.member && message.member.moderatable) {
+        await message.member.timeout(LINK_TIMEOUT_DURATION, "S-V Guard: Spam de liens/invitations (3 fois en 5 min)");
+        await message.channel.send(`🚨 ${message.author} a été rendu muet pour 24 heures après avoir envoyé 3 liens en moins de 5 minutes.`);
+        
+        // Log
+        if (config.logsChannel) {
+          const logsChan = message.guild.channels.cache.get(config.logsChannel);
+          if (logsChan) {
+            const logEmbed = new EmbedBuilder()
+              .setTitle('🚨 Sanction Automatique — Anti-Spam Liens')
+              .setDescription(`Un utilisateur a été rendu muet pour 24 heures pour spam de liens.`)
+              .addFields(
+                { name: '👤 Utilisateur', value: `${message.author} (${message.author.id})`, inline: true },
+                { name: '🛡️ Raison', value: 'Spam de liens/invitations (3 fois en 5 minutes)', inline: true },
+                { name: '⏱️ Durée', value: '24 heures (Timeout)', inline: true }
+              )
+              .setColor('#ED4245')
+              .setTimestamp();
+            await logsChan.send({ embeds: [logEmbed] }).catch(() => {});
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Erreur lors du timeout anti-spam liens :", err);
+    }
+    return true;
+  }
+  return false;
+} 
 
 module.exports = {
   name: 'messageCreate',
@@ -114,7 +166,10 @@ module.exports = {
       if (inviteRegex.test(cleanedContent)) {
         try {
           await message.delete();
-          await message.channel.send(`⚠️ ${message.author}, les invitations Discord ne sont pas autorisées.`);
+          const spammed = await handleLinkSpam(message, config);
+          if (!spammed) {
+            await message.channel.send(`⚠️ ${message.author}, les invitations Discord ne sont pas autorisées.`);
+          }
           return;
         } catch (err) {
           console.error("Erreur lors de la suppression de l'invitation :", err);
@@ -130,7 +185,10 @@ module.exports = {
       if (linkRegex.test(cleanedContent)) {
         try {
           await message.delete();
-          await message.channel.send(`⚠️ ${message.author}, les liens ne sont pas autorisés sur ce serveur.`);
+          const spammed = await handleLinkSpam(message, config);
+          if (!spammed) {
+            await message.channel.send(`⚠️ ${message.author}, les liens ne sont pas autorisés sur ce serveur.`);
+          }
           return; 
         } catch (err) {
           console.error("Erreur lors de la suppression du lien :", err);
