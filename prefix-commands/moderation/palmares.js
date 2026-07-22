@@ -14,8 +14,8 @@ async function updatePalmaresMessage(client, guild, config) {
     const total = palmares.wins + palmares.losses;
     const winrate = total > 0 ? Math.round((palmares.wins / total) * 100) : 0;
 
-    // Construction d'une barre de progression visuelle pour le winrate (10 blocs)
-    const barLength = 10;
+    // Construction d'une barre de progression visuelle pour le winrate (8 blocs)
+    const barLength = 8;
     const greenBlocks = Math.round((winrate / 100) * barLength);
     const redBlocks = barLength - greenBlocks;
     const progressBar = '🟩'.repeat(greenBlocks) + '🟥'.repeat(redBlocks);
