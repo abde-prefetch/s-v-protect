@@ -14,27 +14,59 @@ async function updatePalmaresMessage(client, guild, config) {
     const total = palmares.wins + palmares.losses;
     const winrate = total > 0 ? Math.round((palmares.wins / total) * 100) : 0;
 
-    let historyText = '*Aucun match enregistré.*';
+    // Construction d'une barre de progression visuelle pour le winrate (10 blocs)
+    const barLength = 10;
+    const greenBlocks = Math.round((winrate / 100) * barLength);
+    const redBlocks = barLength - greenBlocks;
+    const progressBar = '🟩'.repeat(greenBlocks) + '🟥'.repeat(redBlocks);
+
+    let historyText = '> *Aucun affrontement enregistré pour le moment.*';
     if (palmares.history && palmares.history.length > 0) {
-      // Prendre les 10 derniers matchs
-      const recent = palmares.history.slice(-10);
-      historyText = recent.map(m => {
-        const icon = m.result === 'win' ? '✅' : '❌';
-        return `${icon} **${m.result.toUpperCase()}** ${m.detail ? `- ${m.detail}` : ''}`;
+      // Afficher les 10 derniers matchs, le plus récent en premier
+      const recent = [...palmares.history].slice(-10).reverse();
+      historyText = recent.map((m, index) => {
+        const matchNum = palmares.history.length - index;
+        const statusIcon = m.result === 'win' ? '🟢' : '🔴';
+        const statusText = m.result === 'win' ? 'VICTOIRE' : 'DÉFAITE';
+        const formattedDate = new Date(m.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        
+        return `\`[#${String(matchNum).padStart(2, '0')}]\` ${statusIcon} **${statusText}** ━ ${m.detail || 'Match amical'} ━ *(${formattedDate})*`;
       }).join('\n');
     }
 
     const embed = new EmbedBuilder()
-      .setTitle('🏆 Palmarès Officiel')
-      .setDescription('Voici l\'historique des affrontements.')
+      .setTitle('🏆 PALMARÈS COMPÉTITIF')
+      .setDescription(
+        'Retrouve ici les statistiques globales et le suivi des affrontements officiels du serveur.\n' +
+        '▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬'
+      )
       .setColor(config.theme || '#5865F2')
       .addFields(
-        { name: '📊 Statistiques', value: `**Victoires :** ${palmares.wins}\n**Défaites :** ${palmares.losses}\n**Winrate :** ${winrate}%`, inline: true },
-        { name: '🔥 Winstreak', value: `Série actuelle : **${palmares.winstreak}** victoires consécutives`, inline: true },
-        { name: '📜 Historique récent', value: historyText, inline: false }
+        { 
+          name: '📊 STATISTIQUES GLOBALES', 
+          value: 
+            `> 👑 **Victoires** : \`${palmares.wins}\`\n` +
+            `> ❌ **Défaites** : \`${palmares.losses}\`\n` +
+            `> 📈 **Taux de Win** : \`${winrate}%\`\n` +
+            `> ⚙️ **Ratio** : ${progressBar}`, 
+          inline: true 
+        },
+        { 
+          name: '🔥 SÉRIE DE WINS', 
+          value: 
+            `> ⚡ **Série Actuelle** : \`${palmares.winstreak}\` win${palmares.winstreak > 1 ? 's' : ''}\n` +
+            `> 🎯 **Total Matchs** : \`${total}\` affrontements\n\n` +
+            `> *Gardez le cap pour la winstreak !*`, 
+          inline: true 
+        },
+        { 
+          name: '📜 HISTORIQUE DES 10 DERNIERS MATCHS', 
+          value: historyText, 
+          inline: false 
+        }
       )
       .setTimestamp()
-      .setFooter({ text: 'S-V Protect • Palmarès', iconURL: guild.iconURL() });
+      .setFooter({ text: 'S-V Protect • Historique Officiel', iconURL: guild.iconURL() });
 
     if (palmares.image) embed.setImage(palmares.image);
 
